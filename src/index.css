@@ -1,40 +1,107 @@
+/* Professional Color System & Global Styles */
 :root {
+  /* Color System */
+  --color-primary: #E6E49F;        /* Vanilla - Lightest color for accents */
+  --color-secondary: #25291C;      /* Black Olive - Darkest color for text/emphasis */
+  --color-background: #E3E7D3;     /* Beige - Main background color */
+  --color-surface: #FFFFFF;        /* Pure white for cards and surfaces */
+  --color-surface-alt: #F5F7EA;    /* Slightly tinted surface for variation */
+  
+  /* Semantic Colors */
+  --color-text-primary: #25291C;   /* Main text color */
+  --color-text-secondary: #4A5544; /* Secondary text (lighter olive) */
+  --color-text-muted: #6B7563;     /* Muted text for descriptions */
+  --color-text-inverse: #FFFFFF;   /* Text on dark backgrounds */
+  
+  /* Interactive States */
+  --color-hover: #D8D67A;          /* Darker vanilla for hover states */
+  --color-focus: #E6E49F;          /* Focus ring color */
+  --color-active: #1F231A;         /* Darker olive for active states */
+  
+  /* Border & Divider Colors */
+  --color-border-light: #D1D6C3;   /* Light borders */
+  --color-border: #B8C0A6;         /* Standard borders */
+  --color-border-dark: #9BA389;    /* Darker borders for emphasis */
+  
+  /* Status Colors (with olive undertones) */
+  --color-success: #7A8471;        /* Success green with olive tint */
+  --color-warning: #B8A882;        /* Warning yellow with olive tint */
+  --color-error: #A67C72;          /* Error red with olive tint */
+  --color-info: #8A9B94;           /* Info blue with olive tint */
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(37, 41, 28, 0.1);
+  --shadow-md: 0 4px 12px rgba(37, 41, 28, 0.15);
+  --shadow-lg: 0 10px 25px rgba(37, 41, 28, 0.2);
+  
+  /* Typography */
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+/* Base Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
-a:hover {
-  color: #535bf2;
+
+html {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
+  padding: 0;
+  width: 100%;
   min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  overflow-x: hidden;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
 }
 
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  line-height: 1.2;
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+p {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+/* Links */
+a {
+  font-weight: 500;
+  color: var(--color-secondary);
+  text-decoration: inherit;
+  transition: color 0.25s ease;
+}
+
+a:hover {
+  color: var(--color-active);
+}
+
+/* Buttons */
 button {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -42,27 +109,65 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  transition: all 0.25s ease;
+  background-color: var(--color-secondary);
+  color: var(--color-text-inverse);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+button:hover {
+  background-color: var(--color-active);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Lists */
+ul, ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Images */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Form Elements */
+input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  transition: all 0.25s ease;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 3px rgba(230, 228, 159, 0.2);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* Focus Management */
+*:focus {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
