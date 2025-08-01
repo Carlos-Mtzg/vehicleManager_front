@@ -1,9 +1,17 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import logo from '../assets/logo.png';
 
 const Sidebar = ({ isMobileMenuOpen, closeMobileMenu }) => {
-  const navigate = useNavigate();
+  const { logout, user } = useAuth();
   
+  const handleLogout = () => {
+    if (window.confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+      logout();
+      closeMobileMenu(); // Cerrar menú móvil si está abierto
+    }
+  };
+
   const menuItems = [
     {
       path: '/dashboard',
@@ -18,50 +26,39 @@ const Sidebar = ({ isMobileMenuOpen, closeMobileMenu }) => {
     {
       path: '/dashboard/brands',
       label: 'Marcas',
-      icon: '🌐'
+      icon: '🏷️'
     },
     {
       path: '/dashboard/clients',
       label: 'Clientes',
-      icon: '👤'
+      icon: '👥'
     }
   ];
-
-  const handleLogout = () => {
-    // Add logout logic here
-    closeMobileMenu && closeMobileMenu();
-    navigate('/');
-  };
-
-  const handleNavClick = () => {
-    // Close mobile menu when navigating
-    closeMobileMenu && closeMobileMenu();
-  };
 
   return (
     <div className={`sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-brand">
-          <img 
-            src={logo} 
-            alt="Vehicle Manager Logo" 
-            className="sidebar-logo"
-          />
+          <div className="sidebar-logo">
+            <img src={logo} alt="Vehicle Manager Logo" className="logo-image" />
+          </div>
           <h3>Vehicle Manager</h3>
         </div>
       </div>
-      
       <nav className="sidebar-nav">
         <ul>
           {menuItems.map((item, index) => (
-            <li key={item.path} style={{ animationDelay: `${index * 0.1}s` }}>
+            <li 
+              key={item.path}
+              style={{ animationDelay: `${(index + 1) * 0.1}s` }}
+            >
               <NavLink 
                 to={item.path} 
                 className={({ isActive }) => 
                   isActive ? 'nav-link active' : 'nav-link'
                 }
                 end={item.path === '/dashboard'}
-                onClick={handleNavClick}
+                onClick={closeMobileMenu}
               >
                 <span className="nav-icon">{item.icon}</span>
                 <span className="nav-label">{item.label}</span>
@@ -70,14 +67,22 @@ const Sidebar = ({ isMobileMenuOpen, closeMobileMenu }) => {
           ))}
         </ul>
       </nav>
-
       <div className="sidebar-footer">
-        <button 
-          onClick={handleLogout}
-          className="logout-button"
-        >
+        {/* Información del usuario */}
+        <div className="user-info">
+          <div className="user-avatar">
+            <span>👤</span>
+          </div>
+          <div className="user-details">
+            <span className="user-name">{user?.username || 'Usuario'}</span>
+            <span className="user-role">Administrador</span>
+          </div>
+        </div>
+        
+        {/* Botón de logout */}
+        <button className="logout-button" onClick={handleLogout}>
           <span className="logout-icon">🚪</span>
-          <span className="logout-label">Cerrar sesión</span>
+          <span className="logout-label">Cerrar Sesión</span>
         </button>
       </div>
     </div>
