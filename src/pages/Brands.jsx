@@ -4,6 +4,7 @@ import BrandCard from '../components/BrandCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import BrandEditModal from '../components/BrandEditModal';
+import BrandCreateModal from '../components/BrandCreateModal';
 import BrandConfirmationModal from '../components/BrandConfirmationModal';
 import ErrorModal from '../components/ErrorModal';
 
@@ -21,6 +22,9 @@ const Brands = () => {
   // Estados del modal de edición
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedBrandId, setSelectedBrandId] = useState(null);
+
+  // Estados del modal de creación
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   // Estados del modal de confirmación para eliminar
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
@@ -189,8 +193,12 @@ const Brands = () => {
   };
 
   const handleCreateNew = () => {
-    setSelectedBrandId(null);
-    setEditModalOpen(true);
+    setCreateModalOpen(true);
+  };
+
+  const handleBrandCreated = () => {
+    // Recargar la lista de marcas después de crear una nueva
+    loadBrands();
   };
 
   // Lógica de paginación
@@ -412,6 +420,13 @@ const Brands = () => {
         onClose={handleCloseEditModal}
         brandId={selectedBrandId}
         onBrandUpdated={handleBrandUpdated}
+      />
+
+      {/* Modal de Creación */}
+      <BrandCreateModal
+        isOpen={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onBrandCreated={handleBrandCreated}
       />
 
       {/* Modal de Confirmación para Eliminar */}
