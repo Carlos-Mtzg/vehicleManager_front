@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
-import { vehicleService, debugApiConfig } from '../services/api';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../hooks/useAuth';
 import VehicleCard from '../components/VehicleCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import VehicleEditModal from '../components/VehicleEditModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 
+
 const Vehicles = () => {
+  const { getApiBaseUrl, getAuthHeaders } = useAuth();
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -25,31 +27,32 @@ const Vehicles = () => {
   const [vehicleToDelete, setVehicleToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Cargar vehículos al montar el componente
-  useEffect(() => {
-    loadVehicles();
-  }, []);
-
-  // Resetear página cuando cambia la búsqueda
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
-
-  const loadVehicles = async () => {
+  // Función para cargar vehículos (definida antes del useEffect)
+  const loadVehicles = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Debug API configuration
-      if (import.meta.env.DEV) {
-        debugApiConfig();
+      const response = await fetch(`${getApiBaseUrl()}/vehicle`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Sesión expirada');
+        }
+        if (response.status === 403) {
+          throw new Error('Acceso denegado - Token inválido o expirado');
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
+
+      const data = await response.json();
       
-      const response = await vehicleService.getAll();
-      
-      // La API devuelve los datos en response.data.data
-      if (response.data && response.data.data) {
-        setVehicles(response.data.data);
+      // La API devuelve los datos en data.data
+      if (data && data.data) {
+        setVehicles(data.data);
       } else {
         setVehicles([]);
       }
@@ -59,7 +62,17 @@ const Vehicles = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getApiBaseUrl, getAuthHeaders]);
+
+  // Cargar vehículos al montar el componente
+  useEffect(() => {
+    loadVehicles();
+  }, [loadVehicles]);
+
+  // Resetear página cuando cambia la búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   // Filtrar vehículos solo por búsqueda
   const getFilteredVehicles = () => {
@@ -109,7 +122,18 @@ const Vehicles = () => {
     
     try {
       setIsDeleting(true);
-      await vehicleService.delete(vehicleToDelete.id);
+      
+      const response = await fetch(`${getApiBaseUrl()}/vehicle/${vehicleToDelete.id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Sesión expirada');
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
       
       // Cerrar modal y limpiar estado primero
       setConfirmModalOpen(false);
