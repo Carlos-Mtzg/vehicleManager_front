@@ -1,17 +1,11 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import { authService } from '../services/api';
+import { createContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext({});
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth debe ser usado dentro de AuthProvider');
-  }
-  return context;
-};
-
 export const AuthProvider = ({ children }) => {
+  // Configuración base de la API
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,10 +64,27 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     try {
       setIsLoading(true);
-      const response = await authService.login(credentials);
+      
+      // Hacer petición de login directamente usando el proxy
+      const url = '/auth/login';
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      });
 
-      if (response.data && response.data.token) {
-        const { token: newToken, user: userData } = response.data;
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (data && data.token) {
+        const { token: newToken, user: userData } = data;
         
         // Guardar en estado
         setToken(newToken);
@@ -81,9 +92,10 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(true);
 
         // Guardar en localStorage
-        authService.setAuthData(newToken, userData || { username: credentials.username });
+        localStorage.setItem('authToken', newToken);
+        localStorage.setItem('user', JSON.stringify(userData || { username: credentials.username }));
 
-        return { success: true, data: response.data };
+        return { success: true, data };
       } else {
         throw new Error('Respuesta inválida del servidor');
       }
@@ -107,7 +119,8 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(false);
 
       // Limpiar localStorage
-      authService.logout();
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
 
       // Opcional: Redirigir al login
       if (window.location.pathname !== '/login') {
@@ -123,25 +136,51 @@ export const AuthProvider = ({ children }) => {
 
   // Función para refrescar datos del usuario
   const refreshUser = () => {
-    const storedUser = authService.getCurrentUser();
+    const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      setUser(storedUser);
+      setUser(JSON.parse(storedUser));
     }
+  };
+
+  // Función para obtener la URL base de la API
+  const getApiBaseUrl = () => API_BASE_URL;
+
+  // Función para obtener headers con token
+  const getAuthHeaders = () => {
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    
+    // Obtener token del localStorage si no está en el estado
+    const currentToken = token || localStorage.getItem('authToken');
+    
+    if (currentToken) {
+      headers.Authorization = `Bearer ${currentToken}`;
+    } else {
+      console.warn('No token available for authentication');
+    }
+    
+    return headers;
   };
 
   // Valor del contexto
   const value = {
-    // Estado
+    // Estado de autenticación
     user,
     token,
     isAuthenticated,
     isLoading,
 
-    // Funciones
+    // Funciones de autenticación
     login,
     logout,
     refreshUser,
-    isTokenValid: () => isTokenValid(token)
+    isTokenValid: () => isTokenValid(token),
+
+    // Helpers para peticiones
+    getApiBaseUrl,
+    getAuthHeaders
   };
 
   return (

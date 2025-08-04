@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
-import { vehicleService, brandService } from '../services/api';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../hooks/useAuth';
 import Modal from './Modal';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 
 const VehicleEditModal = ({ isOpen, onClose, vehicleId, onVehicleUpdated }) => {
+  const { getApiBaseUrl, getAuthHeaders } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -18,13 +19,71 @@ const VehicleEditModal = ({ isOpen, onClose, vehicleId, onVehicleUpdated }) => {
   });
   const [validationErrors, setValidationErrors] = useState({});
 
+  // Función para cargar datos del vehículo (definida antes del useEffect)
+  const loadVehicleData = useCallback(async () => {
+    if (!vehicleId) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch(`${getApiBaseUrl()}/vehicle/${vehicleId}`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Sesión expirada');
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (data && data.data) {
+        const vehicle = data.data;
+        setVehicleInfo(vehicle);
+        setFormData({
+          model: vehicle.model || '',
+          color: vehicle.color || '',
+          price: vehicle.price || '',
+          brand_id: vehicle.brand?.id || ''
+        });
+      }
+    } catch (err) {
+      setError('Error al cargar los datos del vehículo: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [vehicleId, getApiBaseUrl, getAuthHeaders]);
+
+  const loadBrands = useCallback(async () => {
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/brand`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.data) {
+          setBrands(data.data);
+        }
+      }
+    } catch (err) {
+      console.error('Error loading brands:', err);
+      // No es crítico si no se pueden cargar las marcas
+    }
+  }, [getApiBaseUrl, getAuthHeaders]);
+
   // Cargar datos cuando se abre el modal
   useEffect(() => {
     if (isOpen && vehicleId) {
       loadVehicleData();
       loadBrands();
     }
-  }, [isOpen, vehicleId]);
+  }, [isOpen, vehicleId, loadVehicleData, loadBrands]);
 
   // Limpiar formulario cuando se cierra el modal
   useEffect(() => {
@@ -40,41 +99,6 @@ const VehicleEditModal = ({ isOpen, onClose, vehicleId, onVehicleUpdated }) => {
       setVehicleInfo(null);
     }
   }, [isOpen]);
-
-  const loadVehicleData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await vehicleService.getById(vehicleId);
-      
-      if (response.data && response.data.data) {
-        const vehicle = response.data.data;
-        setVehicleInfo(vehicle);
-        setFormData({
-          model: vehicle.model || '',
-          color: vehicle.color || '',
-          price: vehicle.price || '',
-          brand_id: vehicle.brand?.id || ''
-        });
-      }
-    } catch (err) {
-      setError('Error al cargar los datos del vehículo: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadBrands = async () => {
-    try {
-      const response = await brandService.getAll();
-      if (response.data && response.data.data) {
-        setBrands(response.data.data);
-      }
-    } catch (err) {
-      console.error('Error loading brands:', err);
-      // No es crítico si no se pueden cargar las marcas
-    }
-  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -138,7 +162,18 @@ const VehicleEditModal = ({ isOpen, onClose, vehicleId, onVehicleUpdated }) => {
         brand_id: parseInt(formData.brand_id)
       };
       
-      await vehicleService.update(vehicleId, updateData);
+      const response = await fetch(`${getApiBaseUrl()}/vehicle/${vehicleId}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Sesión expirada');
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
       
       // Notificar éxito y cerrar modal
       onVehicleUpdated?.();
