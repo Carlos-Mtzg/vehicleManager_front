@@ -4,6 +4,7 @@ import VehicleCard from '../components/VehicleCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import VehicleEditModal from '../components/VehicleEditModal';
+import VehicleCreateModal from '../components/VehicleCreateModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 
 
@@ -21,6 +22,9 @@ const Vehicles = () => {
   // Estados del modal de edición
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState(null);
+
+  // Estados del modal de creación
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   // Estados del modal de confirmación para eliminar
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
@@ -110,6 +114,15 @@ const Vehicles = () => {
   const handleVehicleUpdated = () => {
     // Recargar la lista de vehículos después de una actualización exitosa
     loadVehicles();
+  };
+
+  const handleVehicleCreated = () => {
+    // Recargar la lista de vehículos después de crear uno nuevo
+    loadVehicles();
+  };
+
+  const handleCreateNew = () => {
+    setCreateModalOpen(true);
   };
 
   const handleDelete = (vehicle) => {
@@ -232,7 +245,7 @@ const Vehicles = () => {
           <button className="action-button" onClick={loadVehicles}>
             🔄 Actualizar
           </button>
-          <button className="action-button action-button-primary">
+          <button className="action-button action-button-primary" onClick={handleCreateNew}>
             ➕ Agregar Vehículo
           </button>
         </div>
@@ -370,7 +383,7 @@ const Vehicles = () => {
             }
           </p>
           {!searchTerm && (
-            <button className="action-button action-button-primary">
+            <button className="action-button action-button-primary" onClick={handleCreateNew}>
               ➕ Agregar Primer Vehículo
             </button>
           )}
@@ -383,6 +396,13 @@ const Vehicles = () => {
         onClose={handleCloseEditModal}
         vehicleId={selectedVehicleId}
         onVehicleUpdated={handleVehicleUpdated}
+      />
+
+      {/* Modal de Creación */}
+      <VehicleCreateModal
+        isOpen={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onVehicleCreated={handleVehicleCreated}
       />
 
       {/* Modal de Confirmación para Eliminar */}
