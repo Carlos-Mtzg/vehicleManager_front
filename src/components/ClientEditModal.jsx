@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { useAuth } from '../hooks/useAuth';
 import Modal from './Modal';
@@ -21,31 +21,12 @@ const ClientEditModal = ({ isOpen, onClose, clientId, onClientUpdated }) => {
 
   const isEditMode = clientId !== null;
 
-  // Cargar datos del cliente y empleados si estamos en modo edición
-  useEffect(() => {
-    if (isOpen && isEditMode) {
-      loadClientData();
-      loadEmployees();
-    } else if (isOpen && !isEditMode) {
-      // Limpiar formulario para crear nuevo cliente
-      setFormData({
-        full_name: '',
-        phone: '',
-        email: '',
-        employeeId: ''
-      });
-      setError(null);
-      setValidationErrors({});
-      loadEmployees();
-    }
-  }, [isOpen, clientId]);
-
-  const loadClientData = async () => {
+  const loadClientData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${getApiBaseUrl()}/user/${clientId}`, {
+      const response = await fetch(`${getApiBaseUrl()}/customer/${clientId}`, {
         method: 'GET',
         headers: getAuthHeaders(),
       });
@@ -70,9 +51,9 @@ const ClientEditModal = ({ isOpen, onClose, clientId, onClientUpdated }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getApiBaseUrl, getAuthHeaders, clientId]);
 
-  const loadEmployees = async () => {
+  const loadEmployees = useCallback(async () => {
     try {
       setLoadingEmployees(true);
       const response = await fetch(`${getApiBaseUrl()}/employee`, {
@@ -85,6 +66,9 @@ const ClientEditModal = ({ isOpen, onClose, clientId, onClientUpdated }) => {
       }
 
       const data = await response.json();
+      console.log('Respuesta completa del endpoint /employee (EditModal):', data);
+      console.log('Array de empleados (EditModal):', data?.data);
+      console.log('Primer empleado (EditModal):', data?.data?.[0]);
       setEmployees(data?.data || []);
     } catch (err) {
       console.error('Error loading employees:', err);
@@ -92,7 +76,26 @@ const ClientEditModal = ({ isOpen, onClose, clientId, onClientUpdated }) => {
     } finally {
       setLoadingEmployees(false);
     }
-  };
+  }, [getApiBaseUrl, getAuthHeaders]);
+
+  // Cargar datos del cliente y empleados si estamos en modo edición
+  useEffect(() => {
+    if (isOpen && isEditMode) {
+      loadClientData();
+      loadEmployees();
+    } else if (isOpen && !isEditMode) {
+      // Limpiar formulario para crear nuevo cliente
+      setFormData({
+        full_name: '',
+        phone: '',
+        email: '',
+        employeeId: ''
+      });
+      setError(null);
+      setValidationErrors({});
+      loadEmployees();
+    }
+  }, [isOpen, clientId, isEditMode, loadClientData, loadEmployees]);
 
   const validateForm = () => {
     const errors = {};
@@ -154,7 +157,7 @@ const ClientEditModal = ({ isOpen, onClose, clientId, onClientUpdated }) => {
       setSaving(true);
       setError(null);
 
-      const url = `${getApiBaseUrl()}/user/${clientId}`;
+      const url = `${getApiBaseUrl()}/customer/${clientId}`;
       
       const requestBody = {
         full_name: formData.full_name.trim(),
@@ -301,11 +304,22 @@ const ClientEditModal = ({ isOpen, onClose, clientId, onClientUpdated }) => {
                     required
                   >
                     <option value="">Seleccionar empleado...</option>
-                    {employees.map(employee => (
-                      <option key={employee.id} value={employee.id}>
-                        {employee.full_name || employee.name || `Empleado ${employee.id}`}
-                      </option>
-                    ))}
+                    {employees.map(employee => {
+                      console.log('Renderizando empleado (EditModal):', employee);
+                      // Intentar diferentes campos posibles para el nombre
+                      const displayName = employee.full_name || 
+                                        employee.fullName || 
+                                        employee.name || 
+                                        employee.firstName + ' ' + employee.lastName ||
+                                        employee.first_name + ' ' + employee.last_name ||
+                                        `Empleado ${employee.id}`;
+                      console.log('Nombre a mostrar (EditModal):', displayName);
+                      return (
+                        <option key={employee.id} value={employee.id}>
+                          {displayName}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               )}
