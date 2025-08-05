@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { useAuth } from '../hooks/useAuth';
 import Modal from './Modal';
@@ -17,20 +17,11 @@ const ClientCreateModal = ({ isOpen, onClose, onClientCreated }) => {
   
   // Estados de la aplicación
   const [employees, setEmployees] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
   const [showConfirmation, setShowConfirmation] = useState(false);
-
-  // Cargar empleados al abrir el modal
-  useEffect(() => {
-    if (isOpen) {
-      loadEmployees();
-      resetForm();
-    }
-  }, [isOpen]);
 
   const resetForm = () => {
     setFormData({
@@ -44,7 +35,7 @@ const ClientCreateModal = ({ isOpen, onClose, onClientCreated }) => {
     setShowConfirmation(false);
   };
 
-  const loadEmployees = async () => {
+  const loadEmployees = useCallback(async () => {
     try {
       setLoadingEmployees(true);
       const response = await fetch(`${getApiBaseUrl()}/employee`, {
@@ -57,6 +48,9 @@ const ClientCreateModal = ({ isOpen, onClose, onClientCreated }) => {
       }
 
       const data = await response.json();
+      console.log('Respuesta completa del endpoint /employee:', data);
+      console.log('Array de empleados:', data?.data);
+      console.log('Primer empleado:', data?.data?.[0]);
       setEmployees(data?.data || []);
     } catch (err) {
       console.error('Error loading employees:', err);
@@ -64,7 +58,15 @@ const ClientCreateModal = ({ isOpen, onClose, onClientCreated }) => {
     } finally {
       setLoadingEmployees(false);
     }
-  };
+  }, [getApiBaseUrl, getAuthHeaders]);
+
+  // Cargar empleados al abrir el modal
+  useEffect(() => {
+    if (isOpen) {
+      loadEmployees();
+      resetForm();
+    }
+  }, [isOpen, loadEmployees]);
 
   const validateForm = () => {
     const errors = {};
@@ -138,7 +140,7 @@ const ClientCreateModal = ({ isOpen, onClose, onClientCreated }) => {
         employee: { id: parseInt(formData.employeeId) }
       };
 
-      const response = await fetch(`${getApiBaseUrl()}/user`, {
+      const response = await fetch(`${getApiBaseUrl()}/customer`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(clientData),
@@ -165,7 +167,15 @@ const ClientCreateModal = ({ isOpen, onClose, onClientCreated }) => {
 
   const getSelectedEmployeeName = () => {
     const employee = employees.find(e => e.id.toString() === formData.employeeId);
-    return employee?.full_name || employee?.name || `ID ${formData.employeeId}`;
+    if (!employee) return `ID ${formData.employeeId}`;
+    
+    // Usar la misma lógica que en el select
+    return employee.full_name || 
+           employee.fullName || 
+           employee.name || 
+           employee.firstName + ' ' + employee.lastName ||
+           employee.first_name + ' ' + employee.last_name ||
+           `ID ${formData.employeeId}`;
   };
 
   const handleClose = () => {
@@ -271,7 +281,7 @@ const ClientCreateModal = ({ isOpen, onClose, onClientCreated }) => {
                 onChange={handleChange}
                 className={`form-input ${validationErrors.full_name ? 'error' : ''}`}
                 placeholder="Ej: Juan Pérez García"
-                disabled={loading}
+                disabled={loadingEmployees}
                 required
               />
             </div>
@@ -295,7 +305,7 @@ const ClientCreateModal = ({ isOpen, onClose, onClientCreated }) => {
                 onChange={handleChange}
                 className={`form-input ${validationErrors.phone ? 'error' : ''}`}
                 placeholder="5551234567"
-                disabled={loading}
+                disabled={loadingEmployees}
                 required
               />
             </div>
@@ -319,7 +329,7 @@ const ClientCreateModal = ({ isOpen, onClose, onClientCreated }) => {
                 onChange={handleChange}
                 className={`form-input ${validationErrors.email ? 'error' : ''}`}
                 placeholder="juan.perez@email.com"
-                disabled={loading}
+                disabled={loadingEmployees}
                 required
               />
             </div>
@@ -347,15 +357,26 @@ const ClientCreateModal = ({ isOpen, onClose, onClientCreated }) => {
                   value={formData.employeeId}
                   onChange={handleChange}
                   className={`form-select ${validationErrors.employeeId ? 'error' : ''}`}
-                  disabled={loading}
+                  disabled={loadingEmployees}
                   required
                 >
                   <option value="">Seleccionar empleado...</option>
-                  {employees.map(employee => (
-                    <option key={employee.id} value={employee.id}>
-                      {employee.full_name || employee.name || `Empleado ${employee.id}`}
-                    </option>
-                  ))}
+                  {employees.map(employee => {
+                    console.log('Renderizando empleado:', employee);
+                    // Intentar diferentes campos posibles para el nombre
+                    const displayName = employee.full_name || 
+                                      employee.fullName || 
+                                      employee.name || 
+                                      employee.firstName + ' ' + employee.lastName ||
+                                      employee.first_name + ' ' + employee.last_name ||
+                                      `Empleado ${employee.id}`;
+                    console.log('Nombre a mostrar:', displayName);
+                    return (
+                      <option key={employee.id} value={employee.id}>
+                        {displayName}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             )}
@@ -369,7 +390,7 @@ const ClientCreateModal = ({ isOpen, onClose, onClientCreated }) => {
               type="button"
               onClick={handleClose}
               className="btn btn-secondary"
-              disabled={loading}
+              disabled={loadingEmployees}
             >
               Cancelar
             </button>
@@ -377,7 +398,7 @@ const ClientCreateModal = ({ isOpen, onClose, onClientCreated }) => {
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={loading || loadingEmployees}
+              disabled={loadingEmployees}
             >
               Continuar
             </button>
