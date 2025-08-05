@@ -36,7 +36,7 @@ const Clients = () => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`${getApiBaseUrl()}/user`, {
+      const response = await fetch(`${getApiBaseUrl()}/customer`, {
         method: 'GET',
         headers: getAuthHeaders(),
       });
@@ -87,8 +87,7 @@ const Clients = () => {
         client.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         client.phone.includes(searchTerm) ||
-        client.id.toString().includes(searchTerm) ||
-        (client.employee?.full_name && client.employee.full_name.toLowerCase().includes(searchTerm.toLowerCase()))
+        client.id.toString().includes(searchTerm)
       );
     }
 
@@ -136,7 +135,7 @@ const Clients = () => {
     try {
       setIsDeleting(true);
       
-      const response = await fetch(`${getApiBaseUrl()}/user/${clientToDelete.id}`, {
+      const response = await fetch(`${getApiBaseUrl()}/customer/${clientToDelete.id}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });
@@ -249,12 +248,12 @@ const Clients = () => {
       </div>
 
       {/* Barra de búsqueda */}
-      <div className="page-card search-section">
+      <div className="search-section">
         <div className="search-container">
           <span className="search-icon">🔍</span>
           <input
             type="text"
-            placeholder="Buscar por nombre, email, teléfono o empleado..."
+            placeholder="Buscar por nombre, email o teléfono..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
