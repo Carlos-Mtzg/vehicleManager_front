@@ -277,7 +277,7 @@ const Brands = () => {
       </div>
 
       {/* Barra de búsqueda */}
-      <div className="page-card search-section">
+      <div className="search-section">
         <div className="search-container">
           <span className="search-icon">🔍</span>
           <input
