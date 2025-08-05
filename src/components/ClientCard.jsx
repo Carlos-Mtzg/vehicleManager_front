@@ -43,12 +43,7 @@ const ClientCard = ({ client, onEdit, onDelete, style }) => {
             </div>
           )}
           
-          {client.employee && (
-            <div className="detail-row">
-              <span className="detail-icon">👨‍💼</span>
-              <span className="detail-text">Empleado: {client.employee.full_name || `ID ${client.employee.id}`}</span>
-            </div>
-          )}
+
         </div>
 
         <div className="client-meta">
@@ -239,10 +234,6 @@ ClientCard.propTypes = {
     full_name: PropTypes.string.isRequired,
     phone: PropTypes.string,
     email: PropTypes.string,
-    employee: PropTypes.shape({
-      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-      full_name: PropTypes.string,
-    }),
     registration_date: PropTypes.string,
   }).isRequired,
   onEdit: PropTypes.func.isRequired,
