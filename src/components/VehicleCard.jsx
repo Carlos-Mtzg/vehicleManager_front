@@ -96,6 +96,26 @@ const VehicleCard = ({ vehicle, onEdit, onDelete, onSell }) => {
             </div>
           </div>
         )}
+
+        <div className="detail-item services-item">
+          <span className="detail-icon">🔧</span>
+          <div className="detail-content">
+            <span className="detail-label">Servicios</span>
+            {vehicle.services && vehicle.services.length > 0 ? (
+              <div className="services-list">
+                {vehicle.services.map(service => (
+                  <span key={service.id} className="service-badge">
+                    {service.code}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <div className="no-services-indicator">
+                <span className="no-services-text">Sin servicios</span>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Footer con acciones */}
