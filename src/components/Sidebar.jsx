@@ -32,6 +32,11 @@ const Sidebar = ({ isMobileMenuOpen, closeMobileMenu }) => {
       path: '/dashboard/clients',
       label: 'Clientes',
       icon: '👥'
+    },
+    {
+      path: '/dashboard/services',
+      label: 'Servicios',
+      icon: '🔧'
     }
   ];
 
