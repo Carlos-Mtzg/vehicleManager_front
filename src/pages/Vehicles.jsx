@@ -5,6 +5,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import VehicleEditModal from '../components/VehicleEditModal';
 import VehicleCreateModal from '../components/VehicleCreateModal';
+import VehicleSellModal from '../components/VehicleSellModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 
 
@@ -30,6 +31,10 @@ const Vehicles = () => {
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [vehicleToDelete, setVehicleToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Estados del modal de venta
+  const [sellModalOpen, setSellModalOpen] = useState(false);
+  const [vehicleToSell, setVehicleToSell] = useState(null);
 
   // Función para cargar vehículos (definida antes del useEffect)
   const loadVehicles = useCallback(async () => {
@@ -171,9 +176,18 @@ const Vehicles = () => {
   };
 
   const handleSell = (vehicle) => {
-    console.log('Sell vehicle:', vehicle);
-    // Aquí implementarías la lógica de venta
-    // Por ejemplo, podrías abrir otro modal para gestionar la venta
+    setVehicleToSell(vehicle);
+    setSellModalOpen(true);
+  };
+
+  const handleCloseSellModal = () => {
+    setSellModalOpen(false);
+    setVehicleToSell(null);
+  };
+
+  const handleVehicleSold = () => {
+    // Recargar la lista de vehículos después de una venta exitosa
+    loadVehicles();
   };
 
   // Lógica de paginación
@@ -417,6 +431,14 @@ const Vehicles = () => {
         type="danger"
         vehicle={vehicleToDelete}
         isLoading={isDeleting}
+      />
+
+      {/* Modal de Venta */}
+      <VehicleSellModal
+        isOpen={sellModalOpen}
+        onClose={handleCloseSellModal}
+        vehicle={vehicleToSell}
+        onVehicleSold={handleVehicleSold}
       />
     </div>
   );
