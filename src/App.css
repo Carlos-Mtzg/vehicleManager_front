@@ -2812,3 +2812,69 @@ body.modal-open {
     padding: 0.4rem 0.8rem;
   }
 }
+
+/* ===== VEHICLE SERVICES STYLES ===== */
+.services-item {
+  grid-column: 1 / -1;
+}
+
+.services-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.service-badge {
+  background: var(--color-primary);
+  color: white;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.no-services-indicator {
+  margin-top: 0.25rem;
+}
+
+.no-services-text {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-style: italic;
+  background: var(--color-surface-alt);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  border: 1px dashed var(--color-border);
+}
+
+/* ===== SERVICES PAGE STYLES ===== */
+.services-page {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+@media (max-width: 768px) {
+  .services-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .services-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
