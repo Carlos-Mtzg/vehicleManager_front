@@ -7,6 +7,7 @@ import DashboardHome from './pages/DashboardHome';
 import Vehicles from './pages/Vehicles';
 import Brands from './pages/Brands';
 import Clients from './pages/Clients';
+import Services from './pages/Services';
 import './App.css';
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
             <Route path="vehicles" element={<Vehicles />} />
             <Route path="brands" element={<Brands />} />
             <Route path="clients" element={<Clients />} />
+            <Route path="services" element={<Services />} />
           </Route>
           
           {/* Ruta para manejar URLs no encontradas */}
