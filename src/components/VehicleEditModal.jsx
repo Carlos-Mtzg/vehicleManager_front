@@ -10,12 +10,14 @@ const VehicleEditModal = ({ isOpen, onClose, vehicleId, onVehicleUpdated }) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [brands, setBrands] = useState([]);
+  const [services, setServices] = useState([]);
   const [vehicleInfo, setVehicleInfo] = useState(null);
   const [formData, setFormData] = useState({
     model: '',
     color: '',
     price: '',
-    brand_id: ''
+    brand_id: '',
+    serviceIds: []
   });
   const [validationErrors, setValidationErrors] = useState({});
 
@@ -48,7 +50,8 @@ const VehicleEditModal = ({ isOpen, onClose, vehicleId, onVehicleUpdated }) => {
           model: vehicle.model || '',
           color: vehicle.color || '',
           price: vehicle.price || '',
-          brand_id: vehicle.brand?.id || ''
+          brand_id: vehicle.brand?.id || '',
+          serviceIds: vehicle.services?.map(service => service.id) || []
         });
       }
     } catch (err) {
@@ -77,13 +80,33 @@ const VehicleEditModal = ({ isOpen, onClose, vehicleId, onVehicleUpdated }) => {
     }
   }, [getApiBaseUrl, getAuthHeaders]);
 
+  const loadServices = useCallback(async () => {
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/service`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.data) {
+          setServices(data.data);
+        }
+      }
+    } catch (err) {
+      console.error('Error loading services:', err);
+      // No es crítico si no se pueden cargar los servicios
+    }
+  }, [getApiBaseUrl, getAuthHeaders]);
+
   // Cargar datos cuando se abre el modal
   useEffect(() => {
     if (isOpen && vehicleId) {
       loadVehicleData();
       loadBrands();
+      loadServices();
     }
-  }, [isOpen, vehicleId, loadVehicleData, loadBrands]);
+  }, [isOpen, vehicleId, loadVehicleData, loadBrands, loadServices]);
 
   // Limpiar formulario cuando se cierra el modal
   useEffect(() => {
@@ -92,7 +115,8 @@ const VehicleEditModal = ({ isOpen, onClose, vehicleId, onVehicleUpdated }) => {
         model: '',
         color: '',
         price: '',
-        brand_id: ''
+        brand_id: '',
+        serviceIds: []
       });
       setValidationErrors({});
       setError(null);
@@ -114,6 +138,27 @@ const VehicleEditModal = ({ isOpen, onClose, vehicleId, onVehicleUpdated }) => {
         [name]: ''
       }));
     }
+  };
+
+  const handleServiceChange = (serviceId) => {
+    setFormData(prev => {
+      const currentServices = prev.serviceIds;
+      const serviceIdNum = parseInt(serviceId);
+      
+      if (currentServices.includes(serviceIdNum)) {
+        // Remover servicio si ya está seleccionado
+        return {
+          ...prev,
+          serviceIds: currentServices.filter(id => id !== serviceIdNum)
+        };
+      } else {
+        // Agregar servicio si no está seleccionado
+        return {
+          ...prev,
+          serviceIds: [...currentServices, serviceIdNum]
+        };
+      }
+    });
   };
 
   const validateForm = () => {
@@ -159,7 +204,8 @@ const VehicleEditModal = ({ isOpen, onClose, vehicleId, onVehicleUpdated }) => {
         model: formData.model.trim(),
         color: formData.color.trim(),
         price: parseFloat(formData.price),
-        brand_id: parseInt(formData.brand_id)
+        brand_id: parseInt(formData.brand_id),
+        serviceIds: formData.serviceIds
       };
       
       const response = await fetch(`${getApiBaseUrl()}/vehicle/${vehicleId}`, {
@@ -291,8 +337,41 @@ const VehicleEditModal = ({ isOpen, onClose, vehicleId, onVehicleUpdated }) => {
                 <span className="field-error">{validationErrors.price}</span>
               )}
             </div>
+          </div>
 
-
+          {/* Servicios */}
+          <div className="form-group">
+            <label>Servicios Asociados</label>
+            <div className="services-selection">
+              {services.length > 0 ? (
+                <div className="services-grid">
+                  {services.map(service => (
+                    <div
+                      key={service.id}
+                      className={`service-option ${formData.serviceIds.includes(service.id) ? 'selected' : ''}`}
+                      onClick={() => handleServiceChange(service.id)}
+                    >
+                      <div className="service-option-header">
+                        <div className="service-code">{service.code}</div>
+                        <div className="service-checkbox">
+                          {formData.serviceIds.includes(service.id) ? '✓' : ''}
+                        </div>
+                      </div>
+                      <div className="service-name">{service.name}</div>
+                      <div className="service-price">${service.price}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="no-services">
+                  <span>No hay servicios disponibles</span>
+                </div>
+              )}
+            </div>
+            <div className="services-note">
+              <span className="note-icon">ℹ️</span>
+              <span>Selecciona los servicios que tendrá este vehículo (opcional)</span>
+            </div>
           </div>
 
           {/* Mostrar error general si existe */}
@@ -333,6 +412,113 @@ const VehicleEditModal = ({ isOpen, onClose, vehicleId, onVehicleUpdated }) => {
           </div>
         </form>
       )}
+
+      <style jsx>{`
+        /* Services Selection Styles */
+        .services-selection {
+          margin-top: 0.5rem;
+        }
+
+        .services-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 0.75rem;
+          max-height: 200px;
+          overflow-y: auto;
+          border: 1px solid var(--color-border);
+          border-radius: 8px;
+          padding: 0.75rem;
+        }
+
+        .service-option {
+          background: var(--color-surface);
+          border: 2px solid var(--color-border);
+          border-radius: 8px;
+          padding: 0.75rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          position: relative;
+        }
+
+        .service-option:hover {
+          border-color: var(--color-primary);
+          transform: translateY(-1px);
+        }
+
+        .service-option.selected {
+          border-color: var(--color-primary);
+          background: rgba(var(--color-primary-rgb), 0.05);
+        }
+
+        .service-option-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.5rem;
+        }
+
+        .service-code {
+          font-family: 'Courier New', monospace;
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: var(--color-primary);
+          background: rgba(var(--color-primary-rgb), 0.1);
+          padding: 0.25rem 0.5rem;
+          border-radius: 4px;
+        }
+
+        .service-checkbox {
+          width: 20px;
+          height: 20px;
+          border: 2px solid var(--color-border);
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.8rem;
+          color: white;
+          background: var(--color-border);
+          transition: all 0.2s ease;
+        }
+
+        .service-option.selected .service-checkbox {
+          background: var(--color-primary);
+          border-color: var(--color-primary);
+        }
+
+        .service-name {
+          font-weight: 600;
+          color: var(--color-text);
+          font-size: 0.9rem;
+          margin-bottom: 0.25rem;
+        }
+
+        .service-price {
+          font-size: 0.8rem;
+          color: var(--color-success);
+          font-weight: 600;
+        }
+
+        .no-services {
+          text-align: center;
+          padding: 1rem;
+          color: var(--color-text-muted);
+          font-style: italic;
+        }
+
+        .services-note {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.8rem;
+          color: var(--color-text-muted);
+          margin-top: 0.5rem;
+        }
+
+        .note-icon {
+          font-size: 1rem;
+        }
+      `}</style>
     </Modal>
   );
 };

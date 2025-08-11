@@ -13,13 +13,16 @@ const VehicleCreateModal = ({ isOpen, onClose, onVehicleCreated }) => {
     color: '',
     price: '',
     brandId: '',
-    newBrandName: ''
+    newBrandName: '',
+    serviceIds: []
   });
   
   // Estados de la aplicación
   const [brands, setBrands] = useState([]);
+  const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingBrands, setLoadingBrands] = useState(false);
+  const [loadingServices, setLoadingServices] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
@@ -27,10 +30,11 @@ const VehicleCreateModal = ({ isOpen, onClose, onVehicleCreated }) => {
   const [isCreatingNewBrand, setIsCreatingNewBrand] = useState(false);
   const [creatingBrand, setCreatingBrand] = useState(false);
 
-  // Cargar marcas al abrir el modal
+  // Cargar marcas y servicios al abrir el modal
   useEffect(() => {
     if (isOpen) {
       loadBrands();
+      loadServices();
       resetForm();
     }
   }, [isOpen]);
@@ -41,7 +45,8 @@ const VehicleCreateModal = ({ isOpen, onClose, onVehicleCreated }) => {
       color: '',
       price: '',
       brandId: '',
-      newBrandName: ''
+      newBrandName: '',
+      serviceIds: []
     });
     setError(null);
     setValidationErrors({});
@@ -68,6 +73,28 @@ const VehicleCreateModal = ({ isOpen, onClose, onVehicleCreated }) => {
       setError('Error al cargar las marcas disponibles');
     } finally {
       setLoadingBrands(false);
+    }
+  };
+
+  const loadServices = async () => {
+    try {
+      setLoadingServices(true);
+      const response = await fetch(`${getApiBaseUrl()}/service`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error al cargar servicios: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setServices(data?.data || []);
+    } catch (err) {
+      console.error('Error loading services:', err);
+      setError('Error al cargar los servicios disponibles');
+    } finally {
+      setLoadingServices(false);
     }
   };
 
@@ -135,6 +162,35 @@ const VehicleCreateModal = ({ isOpen, onClose, onVehicleCreated }) => {
         setIsCreatingNewBrand(false);
         setFormData(prev => ({ ...prev, newBrandName: '' }));
       }
+    }
+  };
+
+  const handleServiceChange = (serviceId) => {
+    setFormData(prev => {
+      const currentServices = prev.serviceIds;
+      const serviceIdNum = parseInt(serviceId);
+      
+      if (currentServices.includes(serviceIdNum)) {
+        // Remover servicio si ya está seleccionado
+        return {
+          ...prev,
+          serviceIds: currentServices.filter(id => id !== serviceIdNum)
+        };
+      } else {
+        // Agregar servicio si no está seleccionado
+        return {
+          ...prev,
+          serviceIds: [...currentServices, serviceIdNum]
+        };
+      }
+    });
+
+    // Limpiar error de validación para servicios
+    if (validationErrors.serviceIds) {
+      setValidationErrors(prev => ({
+        ...prev,
+        serviceIds: ''
+      }));
     }
   };
 
@@ -209,7 +265,8 @@ const VehicleCreateModal = ({ isOpen, onClose, onVehicleCreated }) => {
       model: formData.model.trim(),
       color: formData.color.trim(),
       price: parseFloat(formData.price),
-      brand: { id: parseInt(brandId) }
+      brand: { id: parseInt(brandId) },
+      services: formData.serviceIds.map(id => ({ id }))
     };
 
     let response = await fetch(`${getApiBaseUrl()}/vehicle`, {
@@ -224,7 +281,8 @@ const VehicleCreateModal = ({ isOpen, onClose, onVehicleCreated }) => {
         model: formData.model.trim(),
         color: formData.color.trim(),
         price: parseFloat(formData.price),
-        brandId: parseInt(brandId)
+        brandId: parseInt(brandId),
+        serviceIds: formData.serviceIds
       };
 
       response = await fetch(`${getApiBaseUrl()}/vehicle`, {
@@ -240,7 +298,8 @@ const VehicleCreateModal = ({ isOpen, onClose, onVehicleCreated }) => {
         model: formData.model.trim(),
         color: formData.color.trim(),
         price: parseFloat(formData.price),
-        brand_id: parseInt(brandId)
+        brand_id: parseInt(brandId),
+        service_ids: formData.serviceIds
       };
 
       response = await fetch(`${getApiBaseUrl()}/vehicle`, {
@@ -315,6 +374,25 @@ const VehicleCreateModal = ({ isOpen, onClose, onVehicleCreated }) => {
               <span className="value">
                 {getSelectedBrandName()}
                 {isCreatingNewBrand && <span className="new-badge">Nueva</span>}
+              </span>
+            </div>
+            <div className="summary-item">
+              <span className="label">Servicios:</span>
+              <span className="value">
+                {formData.serviceIds.length > 0 ? (
+                  <div className="selected-services">
+                    {formData.serviceIds.map(serviceId => {
+                      const service = services.find(s => s.id === serviceId);
+                      return service ? (
+                        <span key={serviceId} className="service-tag">
+                          {service.code}
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
+                ) : (
+                  <span className="no-services-text">Ninguno</span>
+                )}
               </span>
             </div>
           </div>
@@ -519,6 +597,50 @@ const VehicleCreateModal = ({ isOpen, onClose, onVehicleCreated }) => {
             </div>
           )}
 
+          {/* Servicios */}
+          <div className="form-group">
+            <label className="form-label">
+              Servicios Asociados
+            </label>
+            {loadingServices ? (
+              <div className="loading-services">
+                <LoadingSpinner size="small" />
+                <span>Cargando servicios...</span>
+              </div>
+            ) : (
+              <div className="services-selection">
+                {services.length > 0 ? (
+                  <div className="services-grid">
+                    {services.map(service => (
+                      <div
+                        key={service.id}
+                        className={`service-option ${formData.serviceIds.includes(service.id) ? 'selected' : ''}`}
+                        onClick={() => handleServiceChange(service.id)}
+                      >
+                        <div className="service-option-header">
+                          <div className="service-code">{service.code}</div>
+                          <div className="service-checkbox">
+                            {formData.serviceIds.includes(service.id) ? '✓' : ''}
+                          </div>
+                        </div>
+                        <div className="service-name">{service.name}</div>
+                        <div className="service-price">${service.price}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="no-services">
+                    <span>No hay servicios disponibles</span>
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="services-note">
+              <span className="note-icon">ℹ️</span>
+              <span>Selecciona los servicios que tendrá este vehículo (opcional)</span>
+            </div>
+          </div>
+
           <div className="form-actions">
             <button
               type="button"
@@ -658,6 +780,137 @@ const VehicleCreateModal = ({ isOpen, onClose, onVehicleCreated }) => {
 
         .note-icon {
           font-size: 1rem;
+        }
+
+        /* Services Selection Styles */
+        .services-selection {
+          margin-top: 0.5rem;
+        }
+
+        .loading-services {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem;
+          color: var(--color-text-muted);
+          font-size: 0.9rem;
+        }
+
+        .services-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 0.75rem;
+          max-height: 200px;
+          overflow-y: auto;
+          border: 1px solid var(--color-border);
+          border-radius: 8px;
+          padding: 0.75rem;
+        }
+
+        .service-option {
+          background: var(--color-surface);
+          border: 2px solid var(--color-border);
+          border-radius: 8px;
+          padding: 0.75rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          position: relative;
+        }
+
+        .service-option:hover {
+          border-color: var(--color-primary);
+          transform: translateY(-1px);
+        }
+
+        .service-option.selected {
+          border-color: var(--color-primary);
+          background: rgba(var(--color-primary-rgb), 0.05);
+        }
+
+        .service-option-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.5rem;
+        }
+
+        .service-code {
+          font-family: 'Courier New', monospace;
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: var(--color-primary);
+          background: rgba(var(--color-primary-rgb), 0.1);
+          padding: 0.25rem 0.5rem;
+          border-radius: 4px;
+        }
+
+        .service-checkbox {
+          width: 20px;
+          height: 20px;
+          border: 2px solid var(--color-border);
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.8rem;
+          color: white;
+          background: var(--color-border);
+          transition: all 0.2s ease;
+        }
+
+        .service-option.selected .service-checkbox {
+          background: var(--color-primary);
+          border-color: var(--color-primary);
+        }
+
+        .service-name {
+          font-weight: 600;
+          color: var(--color-text);
+          font-size: 0.9rem;
+          margin-bottom: 0.25rem;
+        }
+
+        .service-price {
+          font-size: 0.8rem;
+          color: var(--color-success);
+          font-weight: 600;
+        }
+
+        .no-services {
+          text-align: center;
+          padding: 1rem;
+          color: var(--color-text-muted);
+          font-style: italic;
+        }
+
+        .services-note {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.8rem;
+          color: var(--color-text-muted);
+          margin-top: 0.5rem;
+        }
+
+        .selected-services {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+        }
+
+        .service-tag {
+          background: var(--color-primary);
+          color: white;
+          font-size: 0.75rem;
+          padding: 0.25rem 0.5rem;
+          border-radius: 4px;
+          font-family: 'Courier New', monospace;
+          font-weight: 600;
+        }
+
+        .no-services-text {
+          color: var(--color-text-muted);
+          font-style: italic;
         }
 
         .form-actions {
