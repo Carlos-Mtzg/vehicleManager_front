@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import RecoverPasswordModal from './RecoverPasswordModal';
 import logo from '../assets/logo.png';
 
 const Login = () => {
@@ -10,6 +11,7 @@ const Login = () => {
   });
   const [focusedField, setFocusedField] = useState('');
   const [error, setError] = useState('');
+  const [isRecoverModalOpen, setIsRecoverModalOpen] = useState(false);
   
   const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -229,9 +231,27 @@ const Login = () => {
                 )}
               </button>
             </form>
+
+            {/* Enlace de recuperación de contraseña */}
+            <div className="forgot-password-section">
+              <button
+                type="button"
+                className="forgot-password-link"
+                onClick={() => setIsRecoverModalOpen(true)}
+                disabled={isLoading}
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Modal de recuperación de contraseña */}
+      <RecoverPasswordModal 
+        isOpen={isRecoverModalOpen}
+        onClose={() => setIsRecoverModalOpen(false)}
+      />
     </div>
   );
 };
