@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import DashboardHome from './pages/DashboardHome';
@@ -8,6 +9,8 @@ import Vehicles from './pages/Vehicles';
 import Brands from './pages/Brands';
 import Clients from './pages/Clients';
 import Services from './pages/Services';
+import Employees from './pages/Employees';
+import Profile from './pages/Profile';
 import './App.css';
 
 function App() {
@@ -35,6 +38,15 @@ function App() {
             <Route path="brands" element={<Brands />} />
             <Route path="clients" element={<Clients />} />
             <Route path="services" element={<Services />} />
+            <Route 
+              path="employees" 
+              element={
+                <AdminRoute>
+                  <Employees />
+                </AdminRoute>
+              } 
+            />
+            <Route path="profile" element={<Profile />} />
           </Route>
           
           {/* Ruta para manejar URLs no encontradas */}

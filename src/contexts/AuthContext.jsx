@@ -18,17 +18,28 @@ export const AuthProvider = ({ children }) => {
         const storedToken = localStorage.getItem('authToken');
         const storedUser = localStorage.getItem('user');
 
-        if (storedToken && storedUser) {
-          // Verificar que el token no haya expirado
-          if (isTokenValid(storedToken)) {
-            setToken(storedToken);
+              if (storedToken) {
+        // Verificar que el token no haya expirado
+        if (isTokenValid(storedToken)) {
+          setToken(storedToken);
+          
+          // Intentar obtener datos del usuario desde el token
+          const userFromToken = getUserFromToken();
+          if (userFromToken) {
+            setUser(userFromToken);
+            // Actualizar localStorage con los datos del usuario
+            localStorage.setItem('user', JSON.stringify(userFromToken));
+          } else if (storedUser) {
+            // Fallback a datos guardados
             setUser(JSON.parse(storedUser));
-            setIsAuthenticated(true);
-          } else {
-            // Token expirado, limpiar datos
-            logout();
           }
+          
+          setIsAuthenticated(true);
+        } else {
+          // Token expirado, limpiar datos
+          logout();
         }
+      }
       } catch (error) {
         console.error('Error al inicializar autenticación:', error);
         logout();
@@ -86,14 +97,26 @@ export const AuthProvider = ({ children }) => {
       if (data && data.token) {
         const { token: newToken, user: userData } = data;
         
-        // Guardar en estado
+        // Guardar token
         setToken(newToken);
-        setUser(userData || { username: credentials.username });
-        setIsAuthenticated(true);
-
-        // Guardar en localStorage
         localStorage.setItem('authToken', newToken);
-        localStorage.setItem('user', JSON.stringify(userData || { username: credentials.username }));
+        
+        // Obtener datos del usuario desde el token
+        const userFromToken = getUserFromToken();
+        if (userFromToken) {
+          setUser(userFromToken);
+          localStorage.setItem('user', JSON.stringify(userFromToken));
+        } else if (userData) {
+          setUser(userData);
+          localStorage.setItem('user', JSON.stringify(userData));
+        } else {
+          // Fallback con datos básicos
+          const fallbackUser = { username: credentials.username };
+          setUser(fallbackUser);
+          localStorage.setItem('user', JSON.stringify(fallbackUser));
+        }
+        
+        setIsAuthenticated(true);
 
         return { success: true, data };
       } else {
@@ -145,6 +168,44 @@ export const AuthProvider = ({ children }) => {
   // Función para obtener la URL base de la API
   const getApiBaseUrl = () => API_BASE_URL;
 
+  // Función para obtener el ID del usuario desde el token JWT
+  const getUserIdFromToken = () => {
+    try {
+      const currentToken = token || localStorage.getItem('authToken');
+      if (currentToken) {
+        // Decodificar el token JWT para obtener el payload
+        const payload = JSON.parse(atob(currentToken.split('.')[1]));
+        return payload.id || payload.userId || payload.sub;
+      }
+    } catch (error) {
+      console.error('Error decoding JWT token:', error);
+    }
+    return null;
+  };
+
+  // Función para obtener datos del usuario desde el token JWT
+  const getUserFromToken = () => {
+    try {
+      const currentToken = token || localStorage.getItem('authToken');
+      if (currentToken) {
+        const payload = JSON.parse(atob(currentToken.split('.')[1]));
+        
+        // El sub del JWT es directamente el rol
+        const userRole = payload.sub;
+        
+        return {
+          id: userRole, // El rol como ID
+          username: userRole, // El rol como username
+          role: userRole, // El rol directamente del sub
+          email: payload.email || `${userRole.toLowerCase()}@example.com`
+        };
+      }
+    } catch (error) {
+      console.error('Error decoding JWT token:', error);
+    }
+    return null;
+  };
+
   // Función para obtener headers con token
   const getAuthHeaders = () => {
     const headers = {
@@ -164,6 +225,20 @@ export const AuthProvider = ({ children }) => {
     return headers;
   };
 
+  // Función para verificar si el usuario es admin
+  const isAdmin = () => {
+    const currentUser = user || getUserFromToken();
+    
+    if (!currentUser?.role) {
+      return false;
+    }
+    
+    // El rol viene directamente del sub del JWT
+    return currentUser.role === 'ADMIN';
+  };
+
+
+
   // Valor del contexto
   const value = {
     // Estado de autenticación
@@ -180,7 +255,10 @@ export const AuthProvider = ({ children }) => {
 
     // Helpers para peticiones
     getApiBaseUrl,
-    getAuthHeaders
+    getAuthHeaders,
+    getUserIdFromToken,
+    getUserFromToken,
+    isAdmin
   };
 
   return (
