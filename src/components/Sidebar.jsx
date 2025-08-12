@@ -1,17 +1,35 @@
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import logo from '../assets/logo.png';
+import LogoutConfirmationModal from './LogoutConfirmationModal';
 
 const Sidebar = ({ isMobileMenuOpen, closeMobileMenu }) => {
-  const { logout, user } = useAuth();
+  const { logout, user, isAdmin } = useAuth();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
-  const handleLogout = () => {
-    if (window.confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-      logout();
-      closeMobileMenu(); // Cerrar menú móvil si está abierto
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+    closeMobileMenu(); // Cerrar menú móvil si está abierto
+  };
+
+  const handleLogoutConfirm = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setIsLoggingOut(false);
+      setShowLogoutModal(false);
     }
   };
 
+  const handleLogoutCancel = () => {
+    setShowLogoutModal(false);
+  };
+
+
+  
   const menuItems = [
     {
       path: '/dashboard',
@@ -37,7 +55,13 @@ const Sidebar = ({ isMobileMenuOpen, closeMobileMenu }) => {
       path: '/dashboard/services',
       label: 'Servicios',
       icon: '🔧'
-    }
+    },
+    // Opción de empleados solo para administradores
+    ...(isAdmin() ? [{
+      path: '/dashboard/employees',
+      label: 'Empleados',
+      icon: '👨‍💼'
+    }] : [])
   ];
 
   return (
@@ -80,16 +104,30 @@ const Sidebar = ({ isMobileMenuOpen, closeMobileMenu }) => {
           </div>
           <div className="user-details">
             <span className="user-name">{user?.username || 'Usuario'}</span>
-            <span className="user-role">Administrador</span>
           </div>
         </div>
         
+        {/* Botón de perfil */}
+        <button className="profile-button" onClick={() => window.location.href = '/dashboard/profile'}>
+          <span className="profile-icon">👤</span>
+          <span className="profile-label">Ver Perfil</span>
+        </button>
+        
         {/* Botón de logout */}
-        <button className="logout-button" onClick={handleLogout}>
+        <button className="logout-button" onClick={handleLogoutClick}>
           <span className="logout-icon">🚪</span>
           <span className="logout-label">Cerrar Sesión</span>
         </button>
       </div>
+
+      {/* Modal de confirmación de logout */}
+      {showLogoutModal && (
+        <LogoutConfirmationModal
+          onConfirm={handleLogoutConfirm}
+          onCancel={handleLogoutCancel}
+          isLoading={isLoggingOut}
+        />
+      )}
     </div>
   );
 };
