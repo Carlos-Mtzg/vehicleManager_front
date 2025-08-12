@@ -50,6 +50,13 @@ const ConfirmationModal = ({
           titleClass: 'confirmation-title-warning',
           confirmClass: 'btn-warning'
         };
+      case 'success':
+        return {
+          icon: '✅',
+          iconClass: 'confirmation-icon-success',
+          titleClass: 'confirmation-title-success',
+          confirmClass: 'btn-success'
+        };
       case 'info':
         return {
           icon: 'ℹ️',
@@ -148,7 +155,7 @@ const ConfirmationModal = ({
             {isLoading ? (
               <>
                 <span className="btn-spinner">🔄</span>
-                Eliminando...
+                Procesando...
               </>
             ) : (
               <>
